@@ -1,0 +1,99 @@
+{
+  "orders": [
+    {
+      "id": 1745604167160,
+      "userId": 5,
+      "name": "donia",
+      "address": "المنصوره",
+      "phone": "01006084649",
+      "status": "قيد التنفيذ",
+      "items": [
+        {
+          "categoryId": 2,
+          "id": "10",
+          "name": "قطار",
+          "price": "560",
+          "images": [
+            "/pics/Picture10.jpg"
+          ],
+          "quantity": 3
+        },
+        {
+          "categoryId": 1,
+          "id": "2",
+          "name": "تراك عربيات سونيك",
+          "price": "805",
+          "images": [
+            "/pics/Picture11.jpg"
+          ],
+          "quantity": 2
+        }
+      ],
+      "total": 3290,
+      "date": "2025-04-25T18:02:47.161Z"
+    },
+    {
+      "id": 1753644966964,
+      "userId": 5,
+      "name": "css",
+      "address": "ds",
+      "status": "تم الشحن",
+      "phone": "sdvvvvv2",
+      "items": [
+        {
+          "categoryId": 1,
+          "id": "1",
+          "name": "شخصيات سونيك",
+          "price": "470",
+          "images": [
+            "/pics/Picture2.jpg"
+          ],
+          "quantity": 1
+        },
+        {
+          "categoryId": 2,
+          "id": "3",
+          "name": "لعبه بيبي",
+          "price": "365",
+          "images": [
+            "/pics/Picture3.jpg"
+          ],
+          "quantity": 2
+        }
+      ],
+      "total": 1200,
+      "date": "2025-07-27T19:36:06.964Z"
+    },
+    {
+      "id": 1753653157597,
+      "userId": 5,
+      "name": "ff",
+      "address": "fff2",
+      "phone": "555",
+      "items": [
+        {
+          "categoryId": 2,
+          "id": "639",
+          "name": "'حوض ديناصور  بطارية 6069",
+          "price": "280",
+          "images": [
+            "/pics/Picture154.png"
+          ],
+          "quantity": 1
+        },
+        {
+          "categoryId": 2,
+          "id": "4",
+          "name": "لعبه بيبي اكواب",
+          "price": "385",
+          "images": [
+            "/pics/Picture4.jpg"
+          ],
+          "quantity": 1
+        }
+      ],
+      "total": 665,
+      "date": "2025-07-27T21:52:37.598Z"
+    }
+  ]
+}

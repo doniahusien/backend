@@ -1,0 +1,34 @@
+[
+ 
+  {
+    "id": 2,
+    "email": "donia@gmail.com",
+    "password": "862003",
+    "name": "Donia Hussien"
+  },
+  {
+    "id": 3,
+    "email": "sohir@gmail.com",
+    "password": "862003",
+    "name": "Sohir"
+  },
+  {
+    "id": 4,
+    "email": "ali@gmail.com",
+    "password": "862003",
+    "name": "ali"
+  },
+  {
+    "id": 5,
+    "email": "doniahusien@gmail.com",
+    "password": "862003",
+    "name": "Donia Hussien",
+    "role": "admin"
+  },
+  {
+    "id": 6,
+    "email": "yousef@gmail.com",
+    "password": "862003",
+    "name": "يوسف"
+  }
+]
