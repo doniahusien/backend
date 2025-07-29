@@ -3,6 +3,21 @@ import path from 'path';
 
 const filePath = path.join(process.cwd(), 'public', 'data', 'products.json');
 
+// Helper to return CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+// OPTIONS - Handle preflight CORS request
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: corsHeaders,
+  });
+}
+
 // GET - Return products and categories
 export async function GET(req) {
   try {
@@ -15,11 +30,15 @@ export async function GET(req) {
     }), {
       status: 200,
       headers: {
+        ...corsHeaders,
         "Content-Type": "application/json",
       },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: 'Failed to load data' }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Failed to load data' }), {
+      status: 500,
+      headers: corsHeaders,
+    });
   }
 }
 
@@ -40,10 +59,9 @@ export async function POST(req) {
       name,
       price,
       categoryId,
-      images: [`/pics/${imageFile.name}`], // Use full path for frontend
+      images: [`/pics/${imageFile.name}`],
     };
 
-    // Save image file
     const arrayBuffer = await imageFile.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const uploadPath = path.join(process.cwd(), 'public', 'pics', imageFile.name);
@@ -52,9 +70,18 @@ export async function POST(req) {
     data.products.push(newProduct);
     await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
 
-    return new Response(JSON.stringify({ message: 'Product added', product: newProduct }), { status: 201 });
+    return new Response(JSON.stringify({ message: 'Product added', product: newProduct }), {
+      status: 201,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+      },
+    });
   } catch (err) {
     console.error(err);
-    return new Response(JSON.stringify({ error: 'Failed to add product' }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Failed to add product' }), {
+      status: 500,
+      headers: corsHeaders,
+    });
   }
 }

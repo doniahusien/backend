@@ -14,7 +14,6 @@ export async function OPTIONS(request) {
   });
 }
 
-// ✅ POST logic + CORS headers
 export async function POST(request) {
   try {
     const { email, password } = await request.json();

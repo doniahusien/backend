@@ -5,7 +5,7 @@ import path from 'path';
 const ordersPath = path.join(process.cwd(), 'public', 'orders.json');
 const cartPath = path.join(process.cwd(), 'public', 'cart.json');
 
-// Read JSON file
+// Utility: Read JSON file
 async function readFile(filePath) {
     try {
         const data = await fs.readFile(filePath, 'utf8');
@@ -15,9 +15,21 @@ async function readFile(filePath) {
     }
 }
 
-// Write JSON file
+// Utility: Write JSON file
 async function writeFile(filePath, data) {
     await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+}
+
+// Handle CORS preflight requests
+export async function OPTIONS() {
+    return new Response(null, {
+        status: 204,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+        },
+    });
 }
 
 // Handle order creation
@@ -52,22 +64,21 @@ export async function POST(request) {
 
     return new Response(JSON.stringify({ message: 'Order placed successfully', order: newOrder }), {
         status: 200,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+        },
     });
 }
-async function readOrders() {
-    try {
-        const data = await fs.readFile(ordersPath, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        return { orders: [] };
-    }
-}
 
+// Handle fetching orders
 export async function GET() {
-    const orders = await readOrders();
+    const orders = await readFile(ordersPath);
     return new Response(JSON.stringify(orders), {
         status: 200,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+        },
     });
 }
