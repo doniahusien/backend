@@ -3,14 +3,14 @@ import path from 'path';
 
 const filePath = path.join(process.cwd(), 'public', 'data', 'products.json');
 
-// Helper to return CORS headers
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  "Access-Control-Allow-Origin": "*", 
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Content-Type": "application/json",
 };
 
-// OPTIONS - Handle preflight CORS request
+// Handle preflight request
 export async function OPTIONS() {
   return new Response(null, {
     status: 204,
@@ -29,10 +29,7 @@ export async function GET(req) {
       categories: data.categories || [],
     }), {
       status: 200,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/json",
-      },
+      headers: corsHeaders,
     });
   } catch (err) {
     return new Response(JSON.stringify({ error: 'Failed to load data' }), {
@@ -72,10 +69,7 @@ export async function POST(req) {
 
     return new Response(JSON.stringify({ message: 'Product added', product: newProduct }), {
       status: 201,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/json",
-      },
+      headers: corsHeaders,
     });
   } catch (err) {
     console.error(err);
