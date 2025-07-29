@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import { v2 as cloudinary } from 'cloudinary';
 
 const filePath = path.join(process.cwd(), 'public', 'data', 'products.json');
 
@@ -10,7 +11,13 @@ const corsHeaders = {
   "Content-Type": "application/json",
 };
 
-// Handle preflight request
+// Cloudinary config
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 export async function OPTIONS() {
   return new Response(null, {
     status: 204,
@@ -18,7 +25,6 @@ export async function OPTIONS() {
   });
 }
 
-// GET - Return products and categories
 export async function GET(req) {
   try {
     const fileData = await fs.readFile(filePath, 'utf-8');
@@ -39,7 +45,6 @@ export async function GET(req) {
   }
 }
 
-// POST - Add product
 export async function POST(req) {
   try {
     const formData = await req.formData();
@@ -47,6 +52,19 @@ export async function POST(req) {
     const price = formData.get('price');
     const categoryId = formData.get('categoryId');
     const imageFile = formData.get('image');
+
+    const arrayBuffer = await imageFile.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // Upload to Cloudinary
+    const uploadResult = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream({ folder: 'products' }, (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      }).end(buffer);
+    });
+
+    const imageUrl = uploadResult.secure_url;
 
     const fileData = await fs.readFile(filePath, 'utf-8');
     const data = JSON.parse(fileData);
@@ -56,13 +74,8 @@ export async function POST(req) {
       name,
       price,
       categoryId,
-      images: [`/pics/${imageFile.name}`],
+      images: [imageUrl],
     };
-
-    const arrayBuffer = await imageFile.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const uploadPath = path.join(process.cwd(), 'public', 'pics', imageFile.name);
-    await fs.writeFile(uploadPath, buffer);
 
     data.products.push(newProduct);
     await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
