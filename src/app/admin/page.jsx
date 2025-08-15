@@ -189,10 +189,7 @@ const handleSubmit = async (e) => {
                         width={100}
                         height={100}
                         src={
-                          prod.images[0].startsWith('http')
-                            ? prod.images[0]
-                            : `https://backend-chi-sepia.vercel.app/${prod.images[0]}`
-                        }
+                      prod.images[0] }
                         
                         alt={prod.name}
                         className="w-24 h-24 object-cover rounded-md"

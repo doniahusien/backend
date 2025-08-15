@@ -40,12 +40,18 @@ export async function POST(req) {
     // Handle image upload if present
     let imageUrl = null;
     if (image) {
-      const result = await cloudinary.uploader.upload(image, {
-        folder: 'products',
-      });
-      imageUrl = result.secure_url;  // Cloudinary URL of the uploaded image
-      console.log('Uploaded image URL:', imageUrl);
-    }
+     const result = await cloudinary.uploader.upload(image, {
+  folder: 'products',
+});
+
+// Log the Cloudinary response
+console.log('Cloudinary upload response:', result);
+
+// Extract the URL of the uploaded image
+imageUrl = result.secure_url;  // Cloudinary URL of the uploaded image
+console.log('Image URL:', imageUrl);
+}
+    
 
     // Read existing products data
     const file = await fs.readFile(dataFile, 'utf8');
