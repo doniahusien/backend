@@ -3,8 +3,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '@/redux/features/authSlice';
-import logo from "../../public/logo.png"; 
-
 const NavBar = () => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
