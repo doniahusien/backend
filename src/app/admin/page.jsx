@@ -43,7 +43,7 @@ const handleSubmit = async (e) => {
   // Correctly define the URL here
   const url = editProductId 
     ? `https://backend-chi-sepia.vercel.app/api/products/${editProductId}` 
-    : '/api/products';
+    : 'https://backend-chi-sepia.vercel.app/api/products/';
   
   const method = editProductId ? 'PUT' : 'POST';
 

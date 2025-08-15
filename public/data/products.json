@@ -148,6 +148,15 @@
       "images": [
         "https://res.cloudinary.com/dikmcl1b6/image/upload/v1755267795/products/avyta4nh3uevnl1roftn.png"
       ]
+    },
+    {
+      "id": "1755269260922",
+      "name": "ggg",
+      "price": "458",
+      "categoryId": "1",
+      "images": [
+        "https://res.cloudinary.com/dikmcl1b6/image/upload/v1755269135/products/au6zltu0cdd6yylanayh.jpg"
+      ]
     }
   ]
 }
