@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '@/redux/features/authSlice';
-import logo from "../../public/lgog.png"
+import logo from "../../public/logo.png"; 
 
 const NavBar = () => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
@@ -23,7 +23,7 @@ const NavBar = () => {
       <div className="container mx-auto flex justify-between items-center py-4 px-6 sm:px-8">
         {/* Logo */}
         <div className="flex items-center space-x-3 sm:space-x-4">
-          <Image src={logo} alt="الشعار" width={80} height={80} />
+          <Image src="/logo.png" alt="الشعار" width={80} height={80} />
           <Link
             href="/"
             className="text-3xl sm:text-4xl md:text-4xl lg:text-3xl font-extrabold text-yellow-200 hover:text-yellow-300 transition duration-300"
