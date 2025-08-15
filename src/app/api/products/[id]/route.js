@@ -15,127 +15,124 @@ function corsHeaders() {
   };
 }
 
-export default async function handler(req, res) {
-  const BIN_ID = process.env.JSONBIN_BIN_ID;
-  const API_KEY = process.env.JSONBIN_API_KEY;
-  const baseUrl = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+const BIN_ID = process.env.JSONBIN_BIN_ID;
+const API_KEY = process.env.JSONBIN_API_KEY;
+const baseUrl = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204, corsHeaders()).end();
-    return;
-  }
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: corsHeaders(),
+  });
+}
 
+export async function POST(req) {
   try {
-    if (req.method === 'GET') {
-      // Fetch data from JSONBin
-      const r = await fetch(`${baseUrl}/latest`, {
-        headers: { 'X-Master-Key': API_KEY },
-      });
-      const data = await r.json();
-      res.status(200).json(data.record);
-    }
+    const formData = await req.formData();
+    const name = formData.get('name');
+    const price = formData.get('price');
+    const categoryId = formData.get('categoryId');
+    const image = formData.get('image');
 
-    else if (req.method === 'POST') {
-      const formData = await new Promise((resolve, reject) => {
-        const busboy = require('busboy')({ headers: req.headers });
-        const fields = {};
-        const files = {};
+    console.log('Received product data:', { name, price, categoryId });
 
-        busboy.on('field', (name, value) => {
-          fields[name] = value;
-        });
-
-        busboy.on('file', (name, file, info) => {
-          const chunks = [];
-          file.on('data', chunk => chunks.push(chunk));
-          file.on('end', () => {
-            files[name] = Buffer.concat(chunks);
-          });
-        });
-
-        busboy.on('finish', () => resolve({ fields, files }));
-        busboy.on('error', reject);
-
-        req.pipe(busboy);
-      });
-
-      const { name, price, categoryId } = formData.fields;
-      let imageUrl = null;
-
-      if (formData.files.image) {
-        const uploaded = await cloudinary.uploader.upload_stream(
+    let imageUrl = null;
+    if (image && typeof image === 'object') {
+      const buffer = Buffer.from(await image.arrayBuffer());
+      const uploadResult = await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_stream(
           { folder: 'products' },
           (error, result) => {
-            if (error) throw error;
-            imageUrl = result.secure_url;
+            if (error) reject(error);
+            else resolve(result);
           }
-        );
-        await new Promise((resolve, reject) => {
-          uploaded.end(formData.files.image);
-          uploaded.on('finish', resolve);
-          uploaded.on('error', reject);
-        });
-      }
-
-      // Get current products
-      const current = await fetch(`${baseUrl}/latest`, {
-        headers: { 'X-Master-Key': API_KEY },
-      }).then(r => r.json());
-
-      const json = current.record || { products: [] };
-
-      // Add new product
-      const newProduct = {
-        id: `${Date.now()}`,
-        name,
-        price,
-        categoryId,
-        images: imageUrl ? [imageUrl] : [],
-      };
-
-      json.products.push(newProduct);
-
-      // Save back to JSONBin
-      await fetch(`${baseUrl}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Master-Key': API_KEY,
-        },
-        body: JSON.stringify(json),
+        ).end(buffer);
       });
 
-      res.status(200).json({ product: newProduct });
+      imageUrl = uploadResult.secure_url;
+      console.log('Image uploaded to Cloudinary:', imageUrl);
     }
 
-    else if (req.method === 'DELETE') {
-      const { id } = req.query;
+    // Get current JSON from JSONBin
+    const current = await fetch(`${baseUrl}/latest`, {
+      headers: { 'X-Master-Key': API_KEY },
+    }).then((r) => r.json());
 
-      const current = await fetch(`${baseUrl}/latest`, {
-        headers: { 'X-Master-Key': API_KEY },
-      }).then(r => r.json());
+    const json = current.record || { products: [] };
 
-      const json = current.record || { products: [] };
-      json.products = json.products.filter(p => p.id !== id);
+    const newProduct = {
+      id: `${Date.now()}`,
+      name,
+      price,
+      categoryId,
+      images: imageUrl ? [imageUrl] : [],
+    };
 
-      await fetch(`${baseUrl}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Master-Key': API_KEY,
-        },
-        body: JSON.stringify(json),
-      });
+    json.products.push(newProduct);
 
-      res.status(200).json({ success: true });
-    }
+    // Save back to JSONBin
+    await fetch(baseUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': API_KEY,
+      },
+      body: JSON.stringify(json),
+    });
 
-    else {
-      res.status(405).json({ error: 'Method Not Allowed' });
-    }
+    return new Response(JSON.stringify({ product: newProduct }), {
+      status: 200,
+      headers: corsHeaders(),
+    });
   } catch (error) {
-    console.error('API error:', error);
-    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+    console.error('Error saving product:', error);
+    return new Response(JSON.stringify({ error: 'Failed to add product', details: error.message }), {
+      status: 500,
+      headers: corsHeaders(),
+    });
+  }
+}
+
+export async function DELETE(req, { params }) {
+  try {
+    const id = params.id;
+
+    // Get current data from JSONBin
+    const current = await fetch(`${baseUrl}/latest`, {
+      headers: { 'X-Master-Key': API_KEY },
+    }).then((r) => r.json());
+
+    const json = current.record || { products: [] };
+    const filtered = json.products.filter((p) => p.id !== id);
+
+    if (filtered.length === json.products.length) {
+      return new Response(JSON.stringify({ error: 'Product not found' }), {
+        status: 404,
+        headers: corsHeaders(),
+      });
+    }
+
+    json.products = filtered;
+
+    // Save updated list to JSONBin
+    await fetch(baseUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': API_KEY,
+      },
+      body: JSON.stringify(json),
+    });
+
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: corsHeaders(),
+    });
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    return new Response(JSON.stringify({ error: 'Failed to delete product', details: error.message }), {
+      status: 500,
+      headers: corsHeaders(),
+    });
   }
 }
