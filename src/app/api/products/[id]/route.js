@@ -1,5 +1,3 @@
-import { promises as fs } from 'fs';
-import path from 'path';
 import cloudinary from 'cloudinary';
 
 // Configure Cloudinary
@@ -17,94 +15,127 @@ function corsHeaders() {
   };
 }
 
-const dataFile = path.join(process.cwd(), 'public', 'data', 'products.json');
+export default async function handler(req, res) {
+  const BIN_ID = process.env.JSONBIN_BIN_ID;
+  const API_KEY = process.env.JSONBIN_API_KEY;
+  const baseUrl = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders(),
-  });
-}
-
-
-export async function POST(req) {
-  try {
-    const formData = await req.formData();
-    const name = formData.get('name');
-    const price = formData.get('price');
-    const categoryId = formData.get('categoryId');
-    const image = formData.get('image');
-
-    console.log('Received product data:', { name, price, categoryId, image });
-
-    // Handle image upload if present
-    let imageUrl = null;
-    if (image) {
-     const result = await cloudinary.uploader.upload(image, {
-  folder: 'products',
-});
-
-// Log the Cloudinary response
-console.log('Cloudinary upload response:', result);
-
-// Extract the URL of the uploaded image
-imageUrl = result.secure_url;  // Cloudinary URL of the uploaded image
-console.log('Image URL:', imageUrl);
-}
-    
-
-    // Read existing products data
-    const file = await fs.readFile(dataFile, 'utf8');
-    const json = JSON.parse(file);
-
-    // Create new product object
-    const newProduct = {
-      id: `${Date.now()}`,  // Unique ID based on timestamp
-      name,
-      price,
-      categoryId,
-      images: imageUrl ? [imageUrl] : [],  // Add image URL if available
-    };
-
-    console.log('New product created:', newProduct);
-
-    // Save new product to the JSON file
-    json.products.push(newProduct);
-    await fs.writeFile(dataFile, JSON.stringify(json, null, 2));
-
-    return new Response(JSON.stringify({ product: newProduct }), {
-      status: 200,
-      headers: corsHeaders(),
-    });
-  } catch (error) {
-    console.error('Error saving product:', error);  // Log the full error for debugging
-    return new Response(JSON.stringify({ error: 'Failed to add product', details: error.message }), {
-      status: 500,
-      headers: corsHeaders(),
-    });
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, corsHeaders()).end();
+    return;
   }
-}
 
+  try {
+    if (req.method === 'GET') {
+      // Fetch data from JSONBin
+      const r = await fetch(`${baseUrl}/latest`, {
+        headers: { 'X-Master-Key': API_KEY },
+      });
+      const data = await r.json();
+      res.status(200).json(data.record);
+    }
 
+    else if (req.method === 'POST') {
+      const formData = await new Promise((resolve, reject) => {
+        const busboy = require('busboy')({ headers: req.headers });
+        const fields = {};
+        const files = {};
 
-export async function DELETE(req, { params }) {
-  const id = params.id;
+        busboy.on('field', (name, value) => {
+          fields[name] = value;
+        });
 
-  const file = await fs.readFile(dataFile, 'utf8');
-  const json = JSON.parse(file);
-  const filtered = json.products.filter(p => p.id !== id);
+        busboy.on('file', (name, file, info) => {
+          const chunks = [];
+          file.on('data', chunk => chunks.push(chunk));
+          file.on('end', () => {
+            files[name] = Buffer.concat(chunks);
+          });
+        });
 
-  if (filtered.length === json.products.length)
-    return new Response(JSON.stringify({ error: 'Product not found' }), {
-      status: 404,
-      headers: corsHeaders(),
-    });
+        busboy.on('finish', () => resolve({ fields, files }));
+        busboy.on('error', reject);
 
-  json.products = filtered;
-  await fs.writeFile(dataFile, JSON.stringify(json, null, 2));
+        req.pipe(busboy);
+      });
 
-  return new Response(JSON.stringify({ success: true }), {
-    status: 200,
-    headers: corsHeaders(),
-  });
+      const { name, price, categoryId } = formData.fields;
+      let imageUrl = null;
+
+      if (formData.files.image) {
+        const uploaded = await cloudinary.uploader.upload_stream(
+          { folder: 'products' },
+          (error, result) => {
+            if (error) throw error;
+            imageUrl = result.secure_url;
+          }
+        );
+        await new Promise((resolve, reject) => {
+          uploaded.end(formData.files.image);
+          uploaded.on('finish', resolve);
+          uploaded.on('error', reject);
+        });
+      }
+
+      // Get current products
+      const current = await fetch(`${baseUrl}/latest`, {
+        headers: { 'X-Master-Key': API_KEY },
+      }).then(r => r.json());
+
+      const json = current.record || { products: [] };
+
+      // Add new product
+      const newProduct = {
+        id: `${Date.now()}`,
+        name,
+        price,
+        categoryId,
+        images: imageUrl ? [imageUrl] : [],
+      };
+
+      json.products.push(newProduct);
+
+      // Save back to JSONBin
+      await fetch(`${baseUrl}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Master-Key': API_KEY,
+        },
+        body: JSON.stringify(json),
+      });
+
+      res.status(200).json({ product: newProduct });
+    }
+
+    else if (req.method === 'DELETE') {
+      const { id } = req.query;
+
+      const current = await fetch(`${baseUrl}/latest`, {
+        headers: { 'X-Master-Key': API_KEY },
+      }).then(r => r.json());
+
+      const json = current.record || { products: [] };
+      json.products = json.products.filter(p => p.id !== id);
+
+      await fetch(`${baseUrl}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Master-Key': API_KEY,
+        },
+        body: JSON.stringify(json),
+      });
+
+      res.status(200).json({ success: true });
+    }
+
+    else {
+      res.status(405).json({ error: 'Method Not Allowed' });
+    }
+  } catch (error) {
+    console.error('API error:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+  }
 }
