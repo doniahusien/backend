@@ -32,14 +32,15 @@ export async function GET() {
   try {
     const current = await fetch(`${baseUrl}/latest`, {
       headers: { "X-Master-Key": API_KEY },
-      cache: "no-store", // prevent caching on Vercel
+      cache: "no-store",
     }).then((r) => r.json());
 
-    const json = current.record || { products: [] };
-    return new Response(JSON.stringify({ products: json.products }), {
-      status: 200,
-      headers: corsHeaders(),
-    });
+    const json = current.record || { products: [], categories: [] };
+
+    return new Response(
+      JSON.stringify({ products: json.products || [], categories: json.categories || [] }),
+      { status: 200, headers: corsHeaders() }
+    );
   } catch (error) {
     console.error("Error fetching products:", error);
     return new Response(
@@ -51,6 +52,7 @@ export async function GET() {
     );
   }
 }
+
 
 /**
  * POST → Add new product
