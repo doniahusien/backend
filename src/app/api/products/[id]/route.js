@@ -1,61 +1,84 @@
-const BIN_ID = process.env.JSONBIN_BIN_ID;
-const API_KEY = process.env.JSONBIN_API_KEY;
-const baseUrl = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+import { promises as fs } from 'fs';
+import path from 'path';
 
 function corsHeaders() {
   return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
   };
 }
 
-/**
- * DELETE → Remove product by ID
- */
-export async function DELETE(req, { params }) {
-  try {
-    const { id } = params;
+const dataFile = path.join(process.cwd(), 'public', 'data', 'products.json');
 
-    // Get current JSONBin data
-    const current = await fetch(`${baseUrl}/latest`, {
-      headers: { "X-Master-Key": API_KEY },
-      cache: "no-store",
-    }).then((r) => r.json());
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: corsHeaders(),
+  });
+}
 
-    const json = current.record || { products: [] };
-    const filtered = json.products.filter((p) => p.id !== id);
+export async function PUT(req, { params }) {
+  const id = params.id;
+  const formData = await req.formData();
+  const name = formData.get('name');
+  const price = formData.get('price');
+  const categoryId = formData.get('categoryId');
+  const image = formData.get('image');
 
-    if (filtered.length === json.products.length) {
-      return new Response(JSON.stringify({ error: "Product not found" }), {
-        status: 404,
-        headers: corsHeaders(),
-      });
-    }
+  const buffer = image ? Buffer.from(await image.arrayBuffer()) : null;
+  const imageName = image ? `${Date.now()}-${image.name}` : null;
 
-    json.products = filtered;
+  const file = await fs.readFile(dataFile, 'utf8');
+  const json = JSON.parse(file);
+  const index = json.products.findIndex(p => p.id === id);
 
-    // Save updated list
-    await fetch(baseUrl, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Master-Key": API_KEY,
-        "X-Bin-Versioning": "false",
-      },
-      body: JSON.stringify(json),
-      cache: "no-store",
-    });
-
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
+  if (index === -1)
+    return new Response(JSON.stringify({ error: 'Product not found' }), {
+      status: 404,
       headers: corsHeaders(),
     });
-  } catch (error) {
-    console.error("Error deleting product:", error);
-    return new Response(
-      JSON.stringify({ error: "Failed to delete product", details: error.message }),
-      { status: 500, headers: corsHeaders() }
-    );
+
+  const updatedProduct = {
+    ...json.products[index],
+    name,
+    price,
+    categoryId,
+  };
+
+  if (imageName && buffer) {
+    const uploadPath = path.join(process.cwd(), 'public', 'uploads', imageName);
+    await fs.writeFile(uploadPath, buffer);
+    updatedProduct.images = [imageName];
   }
+
+  json.products[index] = updatedProduct;
+  await fs.writeFile(dataFile, JSON.stringify(json, null, 2));
+
+  return new Response(JSON.stringify({ product: updatedProduct }), {
+    status: 200,
+    headers: corsHeaders(),
+  });
+}
+
+export async function DELETE(req, { params }) {
+  const id = params.id;
+
+  const file = await fs.readFile(dataFile, 'utf8');
+  const json = JSON.parse(file);
+  const filtered = json.products.filter(p => p.id !== id);
+
+  if (filtered.length === json.products.length)
+    return new Response(JSON.stringify({ error: 'Product not found' }), {
+      status: 404,
+      headers: corsHeaders(),
+    });
+
+  json.products = filtered;
+  await fs.writeFile(dataFile, JSON.stringify(json, null, 2));
+
+  return new Response(JSON.stringify({ success: true }), {
+    status: 200,
+    headers: corsHeaders(),
+  });
 }
