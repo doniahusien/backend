@@ -20,7 +20,7 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     const fetchAll = async () => {
-      const res = await fetch('https://backend-chi-sepia.vercel.app/api/products');
+      const res = await fetch('/api/products');
       const data = await res.json();
       setProducts(data.products);
       setCategories(data.categories);

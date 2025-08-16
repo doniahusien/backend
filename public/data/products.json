@@ -193,6 +193,15 @@
       "images": [
         "https://res.cloudinary.com/dikmcl1b6/image/upload/v1755357045/products/hob6j7hvztc5lwl14r2k.png"
       ]
+    },
+    {
+      "id": "1755357794555",
+      "name": "d",
+      "price": "787",
+      "categoryId": "2",
+      "images": [
+        "https://res.cloudinary.com/dikmcl1b6/image/upload/v1755357667/products/j1xf5xfmtj87f5o6ippm.jpg"
+      ]
     }
   ]
 }
