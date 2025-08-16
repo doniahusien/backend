@@ -1,94 +1,130 @@
-import { promises as fs } from 'fs';
-import path from 'path';
-import { v2 as cloudinary } from 'cloudinary';
+import cloudinary from "cloudinary";
 
-const filePath = path.join(process.cwd(), 'public', 'data', 'products.json');
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*", 
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Content-Type": "application/json",
-};
-
-// Cloudinary config
+// Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders,
-  });
+// JSONBin Setup
+const BIN_ID = process.env.JSONBIN_BIN_ID;
+const API_KEY = process.env.JSONBIN_API_KEY;
+const baseUrl = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
 }
 
-export async function GET(req) {
-  try {
-    const fileData = await fs.readFile(filePath, 'utf-8');
-    const data = JSON.parse(fileData);
+// Handle CORS preflight
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: corsHeaders() });
+}
 
-    return new Response(JSON.stringify({
-      products: data.products || [],
-      categories: data.categories || [],
-    }), {
+/**
+ * GET → Fetch all products from JSONBin
+ */
+export async function GET() {
+  try {
+    const current = await fetch(`${baseUrl}/latest`, {
+      headers: { "X-Master-Key": API_KEY },
+      cache: "no-store", // prevent caching on Vercel
+    }).then((r) => r.json());
+
+    const json = current.record || { products: [] };
+    return new Response(JSON.stringify({ products: json.products }), {
       status: 200,
-      headers: corsHeaders,
+      headers: corsHeaders(),
     });
-  } catch (err) {
-    return new Response(JSON.stringify({ error: 'Failed to load data' }), {
-      status: 500,
-      headers: corsHeaders,
-    });
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return new Response(
+      JSON.stringify({
+        error: "Failed to fetch products",
+        details: error.message,
+      }),
+      { status: 500, headers: corsHeaders() }
+    );
   }
 }
 
+/**
+ * POST → Add new product
+ */
 export async function POST(req) {
   try {
     const formData = await req.formData();
-    const name = formData.get('name');
-    const price = formData.get('price');
-    const categoryId = formData.get('categoryId');
-    const imageFile = formData.get('image');
+    const name = formData.get("name");
+    const price = formData.get("price");
+    const categoryId = formData.get("categoryId");
+    const image = formData.get("image");
 
-    const arrayBuffer = await imageFile.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    console.log("Received product data:", { name, price, categoryId });
 
-    // Upload to Cloudinary
-    const uploadResult = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream({ folder: 'products' }, (error, result) => {
-        if (error) reject(error);
-        else resolve(result);
-      }).end(buffer);
-    });
+    let imageUrl = null;
 
-    const imageUrl = uploadResult.secure_url;
+    // Upload to Cloudinary if image exists
+    if (image && typeof image === "object") {
+      const buffer = Buffer.from(await image.arrayBuffer());
+      const uploadResult = await new Promise((resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream({ folder: "products" }, (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          })
+          .end(buffer);
+      });
 
-    const fileData = await fs.readFile(filePath, 'utf-8');
-    const data = JSON.parse(fileData);
+      imageUrl = uploadResult.secure_url;
+      console.log("Image uploaded to Cloudinary:", imageUrl);
+    }
+
+    // Get current JSONBin data
+    const current = await fetch(`${baseUrl}/latest`, {
+      headers: { "X-Master-Key": API_KEY },
+      cache: "no-store",
+    }).then((r) => r.json());
+
+    const json = current.record || { products: [] };
 
     const newProduct = {
-      id: Date.now().toString(),
+      id: `${Date.now()}`,
       name,
       price,
       categoryId,
-      images: [imageUrl],
+      images: imageUrl ? [imageUrl] : [],
     };
 
-    data.products.push(newProduct);
-    await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    json.products.push(newProduct);
 
-    return new Response(JSON.stringify({ message: 'Product added', product: newProduct }), {
-      status: 201,
-      headers: corsHeaders,
+    // Save back to JSONBin
+    await fetch(baseUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Master-Key": API_KEY,
+        "X-Bin-Versioning": "false", // prevent multiple versions piling up
+      },
+      body: JSON.stringify(json),
+      cache: "no-store",
     });
-  } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify({ error: 'Failed to add product' }), {
-      status: 500,
-      headers: corsHeaders,
+
+    return new Response(JSON.stringify({ product: newProduct }), {
+      status: 200,
+      headers: corsHeaders(),
     });
+  } catch (error) {
+    console.error("Error saving product:", error);
+    return new Response(
+      JSON.stringify({
+        error: "Failed to add product",
+        details: error.message,
+      }),
+      { status: 500, headers: corsHeaders() }
+    );
   }
 }
