@@ -80,10 +80,7 @@ export default function CategoriesPage() {
       {selectedCategory !== null && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filteredProducts.map((toy, index) => {
-            const imagePath =
-              toy.images?.[0]?.startsWith('/')
-                ? toy.images[0]
-                : `/uploads/${toy.images?.[0] || 'default.jpg'}`;
+            const imagePath =toy.images[0];
 
             return (
               <div

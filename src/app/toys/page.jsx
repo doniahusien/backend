@@ -54,10 +54,7 @@ const ToysPage = () => {
                                     {toy.images?.[0] ? (
                                         <Image
                                             src={
-                                                toy.images[0].startsWith('http')
-                            ? toy.images[0]
-                            : `https://backend-chi-sepia.vercel.app/${toy.images[0]}`
-                                            }
+                                                toy.images[0]}
                                             alt={toy.name}
                                             width={200}
                                             height={150}
