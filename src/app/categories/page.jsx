@@ -5,11 +5,12 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { addToCart } from '@/redux/features/cartSlice';
+import toast from 'react-hot-toast';
 
 export default function CategoriesPage() {
   const dispatch = useDispatch();
   const router = useRouter();
-  const userId = useSelector((state) => state.auth.user?.id);
+  const userId = useSelector((state) => state.auth.user?._id);
 
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
@@ -19,12 +20,21 @@ export default function CategoriesPage() {
   const handleAddToCart = (toy, event) => {
     event.stopPropagation();
     dispatch(addToCart({ userId, item: toy }));
+     toast.success("✅ تمت إضافة المنتج إلى السلة", {
+    duration: 2000, 
+    style: {
+      background: "#4caf50",
+      color: "#fff",
+      fontSize: "16px",
+      fontWeight: "bold",
+    },
+  });
   };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('https://backend-chi-sepia.vercel.app/api/products');
+        const res = await fetch('/api/products');
         const data = await res.json();
 
         setCategories(data.categories.map((cat) => ({ ...cat, id: String(cat.id) })));

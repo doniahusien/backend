@@ -5,7 +5,7 @@ export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async (credentials, thunkAPI) => {
     try {
-      const response = await fetch("https://backend-chi-sepia.vercel.app/api/users", {
+      const response = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
@@ -31,7 +31,7 @@ export const signupUser = createAsyncThunk(
   "auth/signupUser",
   async (credentials, thunkAPI) => {
     try {
-      const response = await fetch("https://backend-chi-sepia.vercel.app/api/signup", {
+      const response = await fetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),

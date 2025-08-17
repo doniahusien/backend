@@ -1,99 +1,115 @@
-import { promises as fs } from 'fs';
-import path from 'path';
-
-const filePath = path.join(process.cwd(), 'public', 'cart.json');
+import clientPromise from "../../../../lib/mongodb";
 
 function setCorsHeaders(headers = {}) {
   return {
-    'Access-Control-Allow-Origin': '*', 
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
     ...headers,
   };
 }
 
-async function readCartFile() {
-  try {
-    const data = await fs.readFile(filePath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    return { carts: {} };
-  }
-}
-
-async function writeCartFile(cartData) {
-  await fs.writeFile(filePath, JSON.stringify(cartData, null, 2));
-}
-
-// Handle preflight request (OPTIONS)
 export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: setCorsHeaders(),
-  });
+  return new Response(null, { status: 204, headers: setCorsHeaders() });
 }
 
-export async function GET() {
-  const cartData = await readCartFile();
-  return new Response(JSON.stringify(cartData), {
-    status: 200,
-    headers: setCorsHeaders({ 'Content-Type': 'application/json' }),
-  });
+// ✅ GET Cart
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const userId = searchParams.get("userId");
+
+  const client = await clientPromise;
+  const db = client.db("shopDB");
+  const cart = await db.collection("carts").findOne({ userId });
+
+  return new Response(
+    JSON.stringify({ carts: { [userId]: cart?.items || [] } }),
+    { status: 200, headers: setCorsHeaders({ "Content-Type": "application/json" }) }
+  );
 }
 
+// ✅ Add to Cart
 export async function POST(request) {
   const { userId, product } = await request.json();
-  const cartData = await readCartFile();
 
-  if (!cartData.carts[userId]) {
-    cartData.carts[userId] = [];
+  if (!userId || !product?._id) {
+    return new Response(
+      JSON.stringify({ message: "❌ Missing userId or product._id" }),
+      { status: 400, headers: setCorsHeaders({ "Content-Type": "application/json" }) }
+    );
   }
 
-  const existingItem = cartData.carts[userId].find(item => item.id === product.id);
-  if (existingItem) {
-    existingItem.quantity += 1;
+  const client = await clientPromise;
+  const db = client.db("shopDB");
+  const carts = db.collection("carts");
+
+  const productData = {
+    _id: product._id,
+    name: product.name,
+    price: product.price,
+    images: product.images || [],
+    quantity: 1,
+  };
+
+  // ✅ Check if product already exists
+  const existing = await carts.findOne({ userId, "items._id": product._id });
+
+  if (existing) {
+    // increase quantity if already in cart
+    await carts.updateOne(
+      { userId, "items._id": product._id },
+      { $inc: { "items.$.quantity": 1 } }
+    );
   } else {
-    cartData.carts[userId].push({ ...product, quantity: 1 });
+    // push new product
+    await carts.updateOne(
+      { userId },
+      { $push: { items: productData } },
+      { upsert: true }
+    );
   }
 
-  await writeCartFile(cartData);
-
-  return new Response(JSON.stringify({ message: "Added to cart" }), {
+  return new Response(JSON.stringify({ message: "✅ Added to cart", item: productData }), {
     status: 200,
-    headers: setCorsHeaders({ 'Content-Type': 'application/json' }),
+    headers: setCorsHeaders({ "Content-Type": "application/json" }),
   });
 }
 
+
+// ✅ Remove from Cart
 export async function DELETE(request) {
   const { userId, productId } = await request.json();
-  const cartData = await readCartFile();
 
-  if (cartData.carts[userId]) {
-    cartData.carts[userId] = cartData.carts[userId].filter(item => item.id !== productId);
-    await writeCartFile(cartData);
-  }
+  const client = await clientPromise;
+  const db = client.db("shopDB");
+  const carts = db.collection("carts");
 
-  return new Response(JSON.stringify({ message: "Item removed from cart" }), {
+  await carts.updateOne(
+    { userId },
+    { $pull: { items: { _id: productId } } }
+  );
+
+  return new Response(JSON.stringify({ message: "Item removed", productId }), {
     status: 200,
-    headers: setCorsHeaders({ 'Content-Type': 'application/json' }),
+    headers: setCorsHeaders({ "Content-Type": "application/json" }),
   });
 }
 
+// ✅ Update Quantity
 export async function PUT(request) {
   const { userId, productId, change } = await request.json();
-  const cartData = await readCartFile();
 
-  if (cartData.carts[userId]) {
-    const item = cartData.carts[userId].find(item => item.id === productId);
-    if (item) {
-      item.quantity += change;
-    }
-  }
+  const client = await clientPromise;
+  const db = client.db("shopDB");
+  const carts = db.collection("carts");
 
-  await writeCartFile(cartData);
+  await carts.updateOne(
+    { userId, "items._id": productId },
+    { $inc: { "items.$.quantity": change } }
+  );
 
-  return new Response(JSON.stringify({ message: "Cart updated" }), {
+  return new Response(JSON.stringify({ message: "Cart updated", productId, change }), {
     status: 200,
-    headers: setCorsHeaders({ 'Content-Type': 'application/json' }),
+    headers: setCorsHeaders({ "Content-Type": "application/json" }),
   });
 }

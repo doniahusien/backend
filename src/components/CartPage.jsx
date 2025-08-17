@@ -6,8 +6,10 @@ import { fetchCart, removeFromCart, updateCartQuantity } from "@/redux/features/
 import Link from "next/link";
 const CartPage = () => {
     const dispatch = useDispatch();
-    const userId = useSelector((state) => state.auth.user?.id);
-    const cart = useSelector((state) => state.carts.carts?.[userId] || []);
+    const userId = useSelector((state) => state.auth.user?._id);
+    const cartItems = useSelector((state) => state.carts.carts?.[userId] || []);
+    const totalPrice = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    
 
     const [showForm, setShowForm] = useState(false);
     const [name, setName] = useState("");
@@ -36,7 +38,6 @@ const CartPage = () => {
         }
     };
 
-    const totalPrice = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
     const handleSubmitOrder = async () => {
         const order = {
@@ -44,7 +45,7 @@ const CartPage = () => {
             name,
             address,
             phone,
-            items: cart,
+            items: cartItems,
             total: totalPrice,
         };
     
@@ -80,13 +81,12 @@ const CartPage = () => {
             <h1 className="text-4xl font-bold text-center text-gray-800 mb-10">سلة التسوق</h1>
 
             <div className="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-md">
-                {Array.isArray(cart) && cart.length === 0 ? (
+                {cartItems.length === 0 ? (
                     <p className="text-center text-gray-600 text-xl">سلتك فارغة.</p>
                 ) : (
-                    cart
-                        .filter((item) => item)
-                        .map((item) => (
-                            <div key={item?.id || Math.random()} className="flex justify-between items-center border-b py-4">
+                    cartItems.filter((item) => item).map((item) => (
+                    
+                            <div key={item?._id } className="flex justify-between items-center border-b py-4">
                                 <div className="flex items-center space-x-4">
                                     {item?.images?.length > 0 ? (
                                         <Image
@@ -111,20 +111,20 @@ const CartPage = () => {
                                 </div>
                                 <div className="flex items-center space-x-2 space-x-reverse">
                                     <button
-                                        onClick={() => handleDecrease(item?.id, item?.quantity)}
+                                        onClick={() => handleDecrease(item?._id, item?.quantity)}
                                         className="bg-gray-300 text-gray-800 px-3 py-1 rounded-lg hover:bg-gray-400"
                                     >
                                         -
                                     </button>
                                     <span className="text-xl">{item?.quantity || 1}</span>
                                     <button
-                                        onClick={() => handleIncrease(item?.id)}
+                                        onClick={() => handleIncrease(item?._id)}
                                         className="bg-gray-300 text-gray-800 px-3 py-1 rounded-lg hover:bg-gray-400"
                                     >
                                         +
                                     </button>
                                     <button
-                                        onClick={() => handleRemove(item?.id)}
+                                        onClick={() => handleRemove(item?._id)}
                                         className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-700"
                                     >
                                         إزالة
@@ -136,7 +136,7 @@ const CartPage = () => {
                 <Link href="/orders">Order summary</Link>
             </div>
 
-            {cart.length > 0 && !showForm && (
+            {cartItems.length > 0 && !showForm && (
                 <div className="max-w-4xl mx-auto text-center mt-6">
                     <button
                         onClick={() => setShowForm(true)}

@@ -94,6 +94,44 @@
       ],
       "total": 665,
       "date": "2025-07-27T21:52:37.598Z"
+    },
+    {
+      "id": 1755459313096,
+      "userId": "68a1e6b570f3ae70cc9f6dce",
+      "name": "fff",
+      "address": "ffew",
+      "phone": "5585",
+      "items": [
+        {
+          "_id": "68a0acdd1453ce0e486db946",
+          "name": "خيمه بالكور بناتي",
+          "price": "590",
+          "images": [
+            "https://res.cloudinary.com/dikmcl1b6/image/upload/v1755267005/products/t4mnz5wyxkclsvdcwrah.jpg"
+          ],
+          "quantity": 2
+        },
+        {
+          "_id": "68a0acdd1453ce0e486db943",
+          "name": "شنطه اكسسوار",
+          "price": "550",
+          "images": [
+            "https://res.cloudinary.com/dikmcl1b6/image/upload/v1755266899/products/jk6q9wygcyyi66rjbqnk.jpg"
+          ],
+          "quantity": 1
+        },
+        {
+          "_id": "68a0acdd1453ce0e486db945",
+          "name": "سوبر ماركت",
+          "price": "280",
+          "images": [
+            "https://res.cloudinary.com/dikmcl1b6/image/upload/v1755266965/products/j7c1anso9jmhz8kelnhv.jpg"
+          ],
+          "quantity": 2
+        }
+      ],
+      "total": 2290,
+      "date": "2025-08-17T19:35:13.096Z"
     }
   ]
 }

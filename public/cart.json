@@ -1,5 +1,74 @@
 {
   "carts": {
-    "5": []
+    "5": [
+      {
+        "_id": "68a0acdd1453ce0e486db940",
+        "id": "68a0acdd1453ce0e486db940",
+        "name": "كارت عربيات",
+        "price": "95",
+        "categoryId": "2",
+        "images": [
+          "https://res.cloudinary.com/dikmcl1b6/image/upload/v1755266821/products/kd4y4bqffifzv0nhwz3n.jpg"
+        ],
+        "quantity": 1
+      },
+      {
+        "_id": "68a0acdd1453ce0e486db947",
+        "id": "68a0acdd1453ce0e486db947",
+        "name": "خيمه بالكور ولادي",
+        "price": "690",
+        "categoryId": "2",
+        "images": [
+          "https://res.cloudinary.com/dikmcl1b6/image/upload/v1755267064/products/uivabcshvsukq83sbxyx.jpg"
+        ],
+        "quantity": 1
+      },
+      {
+        "_id": "68a0acdd1453ce0e486db93d",
+        "id": "68a0acdd1453ce0e486db93d",
+        "name": "تراك عربيات سونيك",
+        "price": "808",
+        "categoryId": "1",
+        "images": [
+          "https://res.cloudinary.com/dikmcl1b6/image/upload/v1755266378/products/eksvfuyhieabrnuvg2o1.jpg"
+        ],
+        "quantity": 2
+      },
+      {
+        "_id": "68a0acdd1453ce0e486db946",
+        "id": "68a0acdd1453ce0e486db946",
+        "name": "خيمه بالكور بناتي",
+        "price": "590",
+        "categoryId": "2",
+        "images": [
+          "https://res.cloudinary.com/dikmcl1b6/image/upload/v1755267005/products/t4mnz5wyxkclsvdcwrah.jpg"
+        ],
+        "quantity": 1
+      }
+    ],
+    "6": [
+      {
+        "_id": "68a0acdd1453ce0e486db941",
+        "id": "68a0acdd1453ce0e486db941",
+        "name": "شنطه اكسسوار",
+        "price": "400",
+        "categoryId": "2",
+        "images": [
+          "https://res.cloudinary.com/dikmcl1b6/image/upload/v1755266853/products/q1kzryhn5zxaqocmjkns.jpg"
+        ],
+        "quantity": 1
+      },
+      {
+        "_id": "68a0acdd1453ce0e486db944",
+        "id": "68a0acdd1453ce0e486db944",
+        "name": "قطار",
+        "price": "560",
+        "categoryId": "2",
+        "images": [
+          "https://res.cloudinary.com/dikmcl1b6/image/upload/v1755266945/products/pz8hmc3ymp9oc0y4ad3u.jpg"
+        ],
+        "quantity": 1
+      }
+    ]
   }
 }

@@ -1,4 +1,5 @@
 "use client";
+import { Toaster } from 'react-hot-toast';
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Provider } from "react-redux";
@@ -14,6 +15,7 @@ export default function RootLayout({ children }) {
           <NavBar />
           
           <main className="flex-grow">
+             <Toaster position="top-center" reverseOrder={false} />
             {children}
           </main>
           

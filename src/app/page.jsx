@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect } from "react";
 import Link from "next/link";
+import toast from "react-hot-toast";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
@@ -15,10 +16,19 @@ const HomePage = () => {
   const dispatch = useDispatch();
   const status = useSelector((state) => state.products?.status || "idle");
   const toys = useSelector(selectToys);
-   const userId = useSelector((state) => state.auth.user?.id);
+   const userId = useSelector((state) => state.auth.user?._id);
       const handleAddToCart = (toy, event) => {
           event.stopPropagation();
-          dispatch(addToCart({ userId, item: toy }));
+        dispatch(addToCart({ userId, item: toy }));
+         toast.success("✅ تمت إضافة المنتج إلى السلة", {
+    duration: 2000, 
+    style: {
+      background: "#4caf50",
+      color: "#fff",
+      fontSize: "16px",
+      fontWeight: "bold",
+    },
+  });
       };
   useEffect(() => {
     if (status === "idle") {

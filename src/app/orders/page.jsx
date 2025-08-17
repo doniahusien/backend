@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 export default function OrderSummaryPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const userId = useSelector((state) => state.auth.user?.id);
+  const userId = useSelector((state) => state.auth.user?._id);
       const user = useAuth();
     const router = useRouter();
       useEffect(() => {
@@ -22,7 +22,7 @@ export default function OrderSummaryPage() {
 
     const fetchOrders = async () => {
         try {
-          const res = await fetch("https://backend-chi-sepia.vercel.app/api/order");
+          const res = await fetch("/api/order");
           
           if (!res.ok) {
             throw new Error('Network response was not ok');
@@ -52,7 +52,7 @@ export default function OrderSummaryPage() {
         <p className="text-gray-600">لا توجد طلبات حالياً.</p>
       ) : (
         orders.map(order => (
-          <div key={order.id} className="border border-gray-300 rounded-lg p-4 mb-6 shadow-sm">
+          <div key={order._id} className="border border-gray-300 rounded-lg p-4 mb-6 shadow-sm">
             <div className="mb-2"><strong>الاسم:</strong> {order.name}</div>
             <div className="mb-2"><strong>العنوان:</strong> {order.address}</div>
             <div className="mb-2"><strong>رقم الهاتف:</strong> {order.phone}</div>

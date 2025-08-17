@@ -1,4 +1,6 @@
 "use client";
+
+ import toast from "react-hot-toast";
 import React, { useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -20,10 +22,20 @@ const ToysPage = () => {
         }
     }, [dispatch, status]);
 
-    const handleAddToCart = (toy, event) => {
-        event.stopPropagation();
-        dispatch(addToCart({ userId, item: toy }));
-    };
+const handleAddToCart = (toy, event) => {
+  event.stopPropagation();
+  dispatch(addToCart({ userId, item: toy }));
+  toast.success("✅ تمت إضافة المنتج إلى السلة", {
+    duration: 2000, // disappears after 2s
+    style: {
+      background: "#4caf50",
+      color: "#fff",
+      fontSize: "16px",
+      fontWeight: "bold",
+    },
+  });
+};
+
       const user = useAuth();
       useEffect(() => {
         if (!user) {

@@ -1,4 +1,5 @@
 "use client";
+import toast from "react-hot-toast";
 import React from "react";
 import { useParams } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
@@ -10,8 +11,8 @@ const ToyDetailsPage = () => {
     const { id } = useParams();
     const dispatch = useDispatch();
     const toys = useSelector(selectToys);
-    const userId = useSelector((state) => state.auth.user?.id);
-    const toy = toys.find((t) => t.id === id);
+    const userId = useSelector((state) => state.auth.user?._id);
+    const toy = toys.find((t) => t._id === id);
 
     if (!toy) {
         return <p className="text-center text-red-600 text-2xl font-bold mt-10">اللعبة غير موجودة.</p>;
@@ -19,6 +20,15 @@ const ToyDetailsPage = () => {
 
     const handleAddToCart = () => {
         dispatch(addToCart({ userId, item: toy }));
+         toast.success("✅ تمت إضافة المنتج إلى السلة", {
+            duration: 2000, // disappears after 2s
+            style: {
+              background: "#4caf50",
+              color: "#fff",
+              fontSize: "16px",
+              fontWeight: "bold",
+            },
+          });
     };
 
     return (
