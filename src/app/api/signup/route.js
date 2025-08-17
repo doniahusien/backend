@@ -1,74 +1,43 @@
-import fs from "fs";
-import path from "path";
+import clientPromise from "../../../../lib/mongodb";
 import { NextResponse } from "next/server";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: corsHeaders });
+}
 
 export async function POST(request) {
   try {
     const { email, password, name } = await request.json();
-    const filePath = path.join(process.cwd(), "public/users.json");
 
-    if (!fs.existsSync(filePath)) {
-      return NextResponse.json(
-        { error: "users.json not found" },
-        {
-          status: 404,
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type",
-          },
-        }
-      );
-    }
+    const client = await clientPromise;
+    const db = client.db("shopDB");
 
-    const fileData = fs.readFileSync(filePath, "utf-8");
-    const users = JSON.parse(fileData);
-
-    const existingUser = users.find((user) => user.email === email);
+    const existingUser = await db.collection("users").findOne({ email });
     if (existingUser) {
       return NextResponse.json(
         { error: "User already exists" },
-        {
-          status: 409,
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type",
-          },
-        }
+        { status: 409, headers: corsHeaders }
       );
     }
 
-    const newUser = {
-      id: users.length + 1,
-      email,
-      password,
-      name,
-    };
+    const newUser = { email, password, name };
+    const result = await db.collection("users").insertOne(newUser);
 
-    users.push(newUser);
-    fs.writeFileSync(filePath, JSON.stringify(users, null, 2));
-
-    return NextResponse.json(newUser, {
-      status: 201,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      },
-    });
+    return NextResponse.json(
+      { ...newUser, _id: result.insertedId },
+      { status: 201, headers: corsHeaders }
+    );
   } catch (error) {
     console.error(error);
     return NextResponse.json(
       { error: "Server error" },
-      {
-        status: 500,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
-        },
-      }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

@@ -15,7 +15,7 @@ const SignUpForm = () => {
     const handleName = (e) => setName(e.target.value);
 
     const handleSubmit = (e) => {
-        e.preventDefault(); // مهم لمنع إعادة تحميل الصفحة
+        e.preventDefault(); 
         dispatch(signupUser({ email, password, name }));
     }
 
