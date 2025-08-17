@@ -19,7 +19,7 @@ export default function AdminProductsPage() {
   const dispatch = useDispatch();
   useEffect(() => {
     const fetchAll = async () => {
-      const res = await fetch('/api/products');
+      const res = await fetch('https://backend-chi-sepia.vercel.app/api/products');
       const data = await res.json();
 
       console.log(data.categories);
@@ -59,8 +59,8 @@ export default function AdminProductsPage() {
   if (formData.image) fd.append("image", formData.image);
 
   const url = editProductId
-    ? `/api/products/${editProductId}`
-    : `/api/products`;
+    ? `https://backend-chi-sepia.vercel.app/api/products/${editProductId}`
+    : `https://backend-chi-sepia.vercel.app/api/products`;
 
   const method = editProductId ? "PUT" : "POST";
 
