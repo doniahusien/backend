@@ -17,7 +17,7 @@ export async function POST(request) {
     const { email, password } = await request.json();
 
     const client = await clientPromise;
-    const db = client.db("mydb");
+    const db = client.db("shopDB");
     const user = await db.collection("users").findOne({ email, password });
 
     if (!user) {
