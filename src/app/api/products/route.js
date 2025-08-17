@@ -1,4 +1,5 @@
 import cloudinary from "cloudinary";
+import clientPromise from "../../../../lib/mongodb";
 
 // Configure Cloudinary
 cloudinary.config({
@@ -6,11 +7,6 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-
-// JSONBin Setup
-const BIN_ID = process.env.JSONBIN_BIN_ID;
-const API_KEY = process.env.JSONBIN_API_KEY;
-const baseUrl = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
 function corsHeaders() {
   return {
@@ -26,106 +22,94 @@ export async function OPTIONS() {
 }
 
 /**
- * GET → Fetch all products from JSONBin
+ * GET → Fetch all products + categories from shopDB
  */
+
 export async function GET() {
   try {
-    const current = await fetch(`${baseUrl}/latest`, {
-      headers: { "X-Master-Key": API_KEY },
-      cache: "no-store",
-    }).then((r) => r.json());
+    const client = await clientPromise;
+    const db = client.db("shopDB");
 
-    const json = current.record || { products: [], categories: [] };
+    // Fetch products and categories
+    const products = await db.collection("products").find({}).toArray();
+    const categories = await db.collection("categories ").find({}).toArray();
+
+    // Map products
+    const productsMapped = products.map(p => ({
+      ...p,
+       _id: p._id.toString(),
+      id: p._id.toString(),
+      categoryId: p.categoryId?.toString() || null, // safeguard
+    }));
+
+    // Map categories
+    const categoriesMapped = categories.map(c => ({
+      _id: c._id.toString(),
+      id: c.id ? String(c.id) : c._id.toString(), // fallback to _id
+      name: c.name,
+    }));
 
     return new Response(
-      JSON.stringify({ products: json.products || [], categories: json.categories || [] }),
-      { status: 200, headers: corsHeaders() }
+      JSON.stringify({ products: productsMapped, categories: categoriesMapped }),
+      { status: 200, headers: { "Access-Control-Allow-Origin": "*" } }
     );
-  } catch (error) {
-    console.error("Error fetching products:", error);
+  } catch (err) {
+    console.error(err);
     return new Response(
-      JSON.stringify({
-        error: "Failed to fetch products",
-        details: error.message,
-      }),
-      { status: 500, headers: corsHeaders() }
+      JSON.stringify({ products: [], categories: [] }),
+      { status: 500, headers: { "Access-Control-Allow-Origin": "*" } }
     );
   }
 }
 
-
 /**
- * POST → Add new product
+ * POST → Add new product into shopDB
  */
 export async function POST(req) {
   try {
+    const client = await clientPromise;
+    const db = client.db("shopDB");
+
     const formData = await req.formData();
     const name = formData.get("name");
     const price = formData.get("price");
     const categoryId = formData.get("categoryId");
     const image = formData.get("image");
 
-    console.log("Received product data:", { name, price, categoryId });
-
-    let imageUrl = null;
-
-    // Upload to Cloudinary if image exists
-    if (image && typeof image === "object") {
-      const buffer = Buffer.from(await image.arrayBuffer());
-      const uploadResult = await new Promise((resolve, reject) => {
-        cloudinary.uploader
-          .upload_stream({ folder: "products" }, (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
-          })
-          .end(buffer);
-      });
-
-      imageUrl = uploadResult.secure_url;
-      console.log("Image uploaded to Cloudinary:", imageUrl);
+    if (!name || !price || !categoryId) {
+      return new Response(JSON.stringify({ error: "Missing required fields" }), { status: 400, headers: corsHeaders() });
     }
 
-    // Get current JSONBin data
-    const current = await fetch(`${baseUrl}/latest`, {
-      headers: { "X-Master-Key": API_KEY },
-      cache: "no-store",
-    }).then((r) => r.json());
-
-    const json = current.record || { products: [] };
+    let imageUrl = null;
+    if (image && image.size > 0) {
+      const buffer = Buffer.from(await image.arrayBuffer());
+      const uploadResult = await new Promise((resolve, reject) => {
+        cloudinary.v2.uploader.upload_stream({ folder: "products" }, (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        }).end(buffer);
+      });
+      imageUrl = uploadResult.secure_url;
+    }
 
     const newProduct = {
-      id: `${Date.now()}`,
       name,
       price,
-      categoryId,
+      categoryId: String(categoryId), // store as string
       images: imageUrl ? [imageUrl] : [],
+      createdAt: new Date(),
     };
 
-    json.products.push(newProduct);
+    const insertResult = await db.collection("products").insertOne(newProduct);
 
-    // Save back to JSONBin
-    await fetch(baseUrl, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Master-Key": API_KEY,
-        "X-Bin-Versioning": "false", // prevent multiple versions piling up
-      },
-      body: JSON.stringify(json),
-      cache: "no-store",
-    });
-
-    return new Response(JSON.stringify({ product: newProduct }), {
-      status: 200,
-      headers: corsHeaders(),
-    });
-  } catch (error) {
-    console.error("Error saving product:", error);
     return new Response(
-      JSON.stringify({
-        error: "Failed to add product",
-        details: error.message,
-      }),
+      JSON.stringify({ product: { ...newProduct, id: insertResult.insertedId.toString() } }),
+      { status: 200, headers: corsHeaders() }
+    );
+  } catch (err) {
+    console.error("POST error:", err);
+    return new Response(
+      JSON.stringify({ error: "Failed to add product", details: err.message }),
       { status: 500, headers: corsHeaders() }
     );
   }
