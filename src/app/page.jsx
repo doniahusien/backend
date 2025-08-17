@@ -45,7 +45,28 @@ const HomePage = () => {
   if (!user) return null;
 
   return (
-    <main dir="rtl" className="w-full min-h-screen bg-gradient-to-r from-red-200 via-yellow-100 to-yellow-200">
+    <>
+     <Head>
+        <title>Kiddo Kingdom | صفحة ألعاب الأطفال</title>
+        <meta name="description" content="Kiddo Kingdom - أفضل مكان لألعاب الأطفال. اكتشف مجموعتنا من الألعاب الممتعة التي تساعد على التعلم والمرح." />
+        <meta name="keywords" content="ألعاب أطفال, Kiddo Kingdom, تسلية, تعليم, لعب, أطفال" />
+        <meta name="author" content="Kiddo Kingdom" />
+        
+        {/* For Social Sharing (Open Graph) */}
+        <meta property="og:title" content="Kiddo Kingdom | صفحة ألعاب الأطفال" />
+        <meta property="og:description" content="Kiddo Kingdom - أفضل مكان لألعاب الأطفال." />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="/images/kiddo-banner.jpg" /> {/* ضع صورة من موقعك */}
+
+        {/* For Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Kiddo Kingdom | صفحة ألعاب الأطفال" />
+        <meta name="twitter:description" content="Kiddo Kingdom - أفضل مكان لألعاب الأطفال." />
+
+        {/* Language */}
+        <meta httpEquiv="Content-Language" content="ar" />
+      </Head>
+        <main dir="rtl" className="w-full min-h-screen bg-gradient-to-r from-red-200 via-yellow-100 to-yellow-200">
       {/* بانر الترحيب */}
       <section className="relative w-full h-[400px] bg-[url('/ban.png')] bg-cover bg-center text-white flex items-center justify-center text-center">
         <div className="absolute inset-0 bg-black bg-opacity-50"></div>
@@ -89,7 +110,8 @@ const HomePage = () => {
           ))}
         </div>
       </section>
-    </main>
+    </main> </>
+ 
   );
 };
 
