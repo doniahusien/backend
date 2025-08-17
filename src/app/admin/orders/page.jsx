@@ -61,7 +61,6 @@ export default function AdminOrdersPage() {
                         <th className="border p-2">المستخدم</th>
                         <th className="border p-2">العناصر</th>
                         <th className="border p-2">المجموع</th>
-                        <th className="border p-2">الحالة</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -93,19 +92,7 @@ export default function AdminOrdersPage() {
                                 )}
                             </td>
                             <td className="border p-2">{order.total || 0} ج</td>
-                            <td className="border p-2">
-                                <select
-                                    value={order.status}
-                                    onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                                    className="border rounded px-2 py-1"
-                                >
-                                    <option value="جديد">جديد</option>
-                                    <option value="قيد التنفيذ">قيد التنفيذ</option>
-                                    <option value="تم الشحن">تم الشحن</option>
-                                    <option value="تم التوصيل">تم التوصيل</option>
-                                </select>
-
-                            </td>
+                          
                         </tr>
                     ))}
                 </tbody>
