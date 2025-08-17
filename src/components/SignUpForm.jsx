@@ -2,7 +2,7 @@
 import { signupUser } from '@/redux/features/authSlice'
 import React, { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-
+import toast from 'react-hot-toast'
 const SignUpForm = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -14,11 +14,41 @@ const SignUpForm = () => {
     const handlePassword = (e) => setPassword(e.target.value);
     const handleName = (e) => setName(e.target.value);
 
-    const handleSubmit = (e) => {
-        e.preventDefault(); 
-        dispatch(signupUser({ email, password, name }));
-    }
+   const handleSubmit = async (e) => {
+    e.preventDefault();
 
+    try {
+      // نفذ الـ dispatch واستنى النتيجة
+      await dispatch(signupUser({ email, password, name })).unwrap();
+
+      // لو تم بنجاح
+      toast.success("✅ تمت تسجيل الحساب", {
+        duration: 2000,
+        style: {
+          background: "#4caf50",
+          color: "#fff",
+          fontSize: "16px",
+          fontWeight: "bold",
+        },
+      });
+
+      // بعد ثانيتين يحول للـ home
+      setTimeout(() => {
+        router.push("/");
+      }, 2000);
+
+    } catch (err) {
+      toast.error("❌ فشل التسجيل", {
+        duration: 2000,
+        style: {
+          background: "#f44336",
+          color: "#fff",
+          fontSize: "16px",
+          fontWeight: "bold",
+        },
+      });
+    }
+  };
     return (
         <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-red-200 via-yellow-100 to-yellow-200">
             <form
