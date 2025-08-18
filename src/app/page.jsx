@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect } from "react";
 import Link from "next/link";
+import Head from "next/head";
 import toast from "react-hot-toast";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
