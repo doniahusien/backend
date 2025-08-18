@@ -2,12 +2,12 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useSelector } from 'react-redux';
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
+const router = useRouter();
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -25,8 +25,7 @@ export default function AdminOrdersPage() {
 
     fetchOrders();
   }, []);
-  const { isAuthenticated, user } = useSelector((state) => state.auth);
-const router = useRouter();
+
 if (loading) {
   return (
     <div className="flex items-center justify-center h-64 space-x-2">
@@ -36,7 +35,8 @@ if (loading) {
       <span className="ml-3 text-lg font-medium text-gray-600">Loading orders...</span>
     </div>
   );
-}  { user?.role != 'admin' && !isAuthenticated && router.push('/login') }
+  }
+  { user?.role != 'admin' && !isAuthenticated && router.push('/login') }
 
   return (
     <div className="p-6">
