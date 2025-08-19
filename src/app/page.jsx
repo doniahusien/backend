@@ -21,7 +21,7 @@ const HomePage = () => {
       const handleAddToCart = (toy, event) => {
           event.stopPropagation();
         dispatch(addToCart({ userId, item: toy }));
-         toast.success("✅ تمت إضافة المنتج إلى السلة", {
+        toast.success("✅ تمت إضافة المنتج إلى السلة", {
     duration: 2000, 
     style: {
       background: "#4caf50",
@@ -67,6 +67,7 @@ const HomePage = () => {
         {/* Language */}
         <meta httpEquiv="Content-Language" content="ar" />
       </Head>
+      
         <main dir="rtl" className="w-full min-h-screen bg-gradient-to-r from-red-200 via-yellow-100 to-yellow-200">
       {/* بانر الترحيب */}
       <section className="relative w-full h-[400px] bg-[url('/ban.png')] bg-cover bg-center text-white flex items-center justify-center text-center">
