@@ -38,12 +38,17 @@ export async function PUT(req, { params }) {
             { $set: { highlight } }
         );
 
-        const updated = await db.collection("products").findOne(
-            { _id: new ObjectId(params.id) },
-            { projection: { _id: 1, name: 1, highlight: 1 } }
-        );
+        const updated = await db.collection("products").findOne({
+            _id: new ObjectId(params.id),
+        });
 
-        return new Response(JSON.stringify(updated), {
+        // Convert _id to string for frontend
+        const result = {
+            ...updated,
+            _id: updated._id.toString(),
+        };
+
+        return new Response(JSON.stringify(result), {
             status: 200,
             headers: corsHeaders(),
         });
