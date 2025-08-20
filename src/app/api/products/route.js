@@ -95,9 +95,10 @@ export async function POST(req) {
     const newProduct = {
       name,
       price,
-      categoryId: String(categoryId), // store as string
+      categoryId: String(categoryId),
       images: imageUrl ? [imageUrl] : [],
       createdAt: new Date(),
+      highlight: false,
     };
 
     const insertResult = await db.collection("products").insertOne(newProduct);
