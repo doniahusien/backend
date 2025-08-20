@@ -30,8 +30,8 @@ export async function POST(req) {
     await transporter.sendMail({
       from: process.env.GMAIL_USER,
       to: process.env.GMAIL_USER,
-      subject: `New Contact Form Message from ${name}`,
-      text: message,
+      subject: `New Contact Form Message from ${name} and email: ${email}`,
+      text: message ,
       replyTo: email,
     });
 
