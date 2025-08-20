@@ -1,23 +1,24 @@
 import nodemailer from "nodemailer";
 
-export default async function handler(req, res) {
-  // ✅ إعداد هيدرز CORS
-  res.setHeader("Access-Control-Allow-Origin", "*"); // تقدر تخليها "http://localhost:3000" أو الدومين الحقيقي بتاعك
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+// ✅ إعداد CORS headers
+function setCorsHeaders(res) {
+  res.headers.set("Access-Control-Allow-Origin", "*"); // ممكن بدل * تحط دومين موقعك
+  res.headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.headers.set("Access-Control-Allow-Headers", "Content-Type");
+}
 
-  // ✅ التعامل مع Preflight (CORS check)
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
+// ✅ هندلر للـ OPTIONS (عشان preflight request)
+export async function OPTIONS(req) {
+  const res = new Response(null, { status: 204 });
+  setCorsHeaders(res);
+  return res;
+}
 
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method not allowed" });
-  }
+// ✅ هندلر للـ POST
+export async function POST(req) {
+  const { name, email, message } = await req.json();
 
   try {
-    const { name, email, message } = req.body;
-
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -30,21 +31,23 @@ export default async function handler(req, res) {
       from: process.env.GMAIL_USER,
       to: process.env.GMAIL_USER,
       subject: `New Contact Form Message from ${name}`,
-      text: `
-        الاسم: ${name}
-        البريد: ${email}
-        الرسالة: ${message}
-      `,
+      text: message,
       replyTo: email,
     });
 
-    return res
-      .status(200)
-      .json({ success: true, message: "Message sent successfully" });
+    const res = new Response(
+      JSON.stringify({ success: true, message: "Message sent successfully" }),
+      { status: 200 }
+    );
+    setCorsHeaders(res);
+    return res;
   } catch (error) {
-    console.error("Email error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Error sending message" });
+    console.error(error);
+    const res = new Response(
+      JSON.stringify({ success: false, message: "Error sending message" }),
+      { status: 500 }
+    );
+    setCorsHeaders(res);
+    return res;
   }
 }
