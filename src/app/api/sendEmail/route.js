@@ -1,23 +1,23 @@
 import nodemailer from "nodemailer";
 
 export default async function handler(req, res) {
-  // ✅ Enable CORS
-  res.setHeader("Access-Control-Allow-Origin", "*"); // or specific domain e.g. "https://kido-gray.vercel.app"
+  // ✅ إعداد هيدرز CORS
+  res.setHeader("Access-Control-Allow-Origin", "*"); // تقدر تخليها "http://localhost:3000" أو الدومين الحقيقي بتاعك
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // ✅ Handle preflight request
+  // ✅ التعامل مع Preflight (CORS check)
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
   if (req.method !== "POST") {
-    return res.status(405).send("Method not allowed");
+    return res.status(405).json({ message: "Method not allowed" });
   }
 
-  const { name, email, message } = req.body;
-
   try {
+    const { name, email, message } = req.body;
+
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -27,16 +27,24 @@ export default async function handler(req, res) {
     });
 
     await transporter.sendMail({
-      from: process.env.GMAIL_USER, // 👈 لازم يكون إيميلك نفسه
-      to: process.env.GMAIL_USER,   // 👈 الرسالة توصلك إنت
+      from: process.env.GMAIL_USER,
+      to: process.env.GMAIL_USER,
       subject: `New Contact Form Message from ${name}`,
-      text: message,
-      replyTo: email, // 👈 إيميل الشخص اللي بعت الفورم
+      text: `
+        الاسم: ${name}
+        البريد: ${email}
+        الرسالة: ${message}
+      `,
+      replyTo: email,
     });
 
-    res.status(200).json({ success: true, message: "Message sent successfully" });
+    return res
+      .status(200)
+      .json({ success: true, message: "Message sent successfully" });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Error sending message" });
+    console.error("Email error:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Error sending message" });
   }
 }
