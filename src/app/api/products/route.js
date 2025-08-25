@@ -74,29 +74,33 @@ export async function POST(req) {
     const name = formData.get("name");
     const price = formData.get("price");
     const categoryId = formData.get("categoryId");
-    const image = formData.get("image");
+    const images = formData.getAll("images"); // 👈 multiple files
 
     if (!name || !price || !categoryId) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), { status: 400, headers: corsHeaders() });
     }
 
-    let imageUrl = null;
-    if (image && image.size > 0) {
-      const buffer = Buffer.from(await image.arrayBuffer());
-      const uploadResult = await new Promise((resolve, reject) => {
-        cloudinary.v2.uploader.upload_stream({ folder: "products" }, (err, result) => {
-          if (err) reject(err);
-          else resolve(result);
-        }).end(buffer);
-      });
-      imageUrl = uploadResult.secure_url;
+    let imageUrls = [];
+    if (images && images.length > 0) {
+      for (const image of images) {
+        if (image && image.size > 0) {
+          const buffer = Buffer.from(await image.arrayBuffer());
+          const uploadResult = await new Promise((resolve, reject) => {
+            cloudinary.v2.uploader.upload_stream({ folder: "products" }, (err, result) => {
+              if (err) reject(err);
+              else resolve(result);
+            }).end(buffer);
+          });
+          imageUrls.push(uploadResult.secure_url);
+        }
+      }
     }
 
     const newProduct = {
       name,
       price,
       categoryId: String(categoryId),
-      images: imageUrl ? [imageUrl] : [],
+      images: imageUrls, // 👈 array instead of single image
       createdAt: new Date(),
       highlight: false,
     };
