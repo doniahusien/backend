@@ -77,20 +77,29 @@ export async function POST(req) {
     const images = formData.getAll("images"); // 👈 multiple files
 
     if (!name || !price || !categoryId) {
-      return new Response(JSON.stringify({ error: "Missing required fields" }), { status: 400, headers: corsHeaders() });
+      return new Response(
+        JSON.stringify({ error: "Missing required fields" }),
+        { status: 400, headers: corsHeaders() }
+      );
     }
 
     let imageUrls = [];
+
     if (images && images.length > 0) {
       for (const image of images) {
         if (image && image.size > 0) {
           const buffer = Buffer.from(await image.arrayBuffer());
+
           const uploadResult = await new Promise((resolve, reject) => {
-            cloudinary.v2.uploader.upload_stream({ folder: "products" }, (err, result) => {
-              if (err) reject(err);
-              else resolve(result);
-            }).end(buffer);
+            cloudinary.v2.uploader.upload_stream(
+              { folder: "products" },
+              (err, result) => {
+                if (err) reject(err);
+                else resolve(result);
+              }
+            ).end(buffer);
           });
+
           imageUrls.push(uploadResult.secure_url);
         }
       }
@@ -100,7 +109,7 @@ export async function POST(req) {
       name,
       price,
       categoryId: String(categoryId),
-      images: imageUrls, // 👈 array instead of single image
+      images: imageUrls, // ✅ now an array
       createdAt: new Date(),
       highlight: false,
     };
@@ -108,7 +117,9 @@ export async function POST(req) {
     const insertResult = await db.collection("products").insertOne(newProduct);
 
     return new Response(
-      JSON.stringify({ product: { ...newProduct, id: insertResult.insertedId.toString() } }),
+      JSON.stringify({
+        product: { ...newProduct, id: insertResult.insertedId.toString() },
+      }),
       { status: 200, headers: corsHeaders() }
     );
   } catch (err) {
@@ -119,3 +130,4 @@ export async function POST(req) {
     );
   }
 }
+
