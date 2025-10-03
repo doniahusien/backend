@@ -31,7 +31,7 @@ export async function GET() {
 
     // Fetch products and categories
     const products = await db.collection("products").find({}).toArray();
-    const categories = await db.collection("categories").find({}).toArray();
+    const categories = await db.collection("categories ").find({}).toArray();
 
     // Map products
     const productsMapped = products.map((p) => ({
@@ -39,7 +39,7 @@ export async function GET() {
       _id: p._id.toString(),
       id: p._id.toString(),
       categoryId: p.categoryId?.toString() || null,
-      description: p.description || "", // ✅ include description
+      description: p.description || "", // 👈 fallback if missing
     }));
 
     // Map categories
@@ -50,17 +50,14 @@ export async function GET() {
     }));
 
     return new Response(
-      JSON.stringify({
-        products: productsMapped,
-        categories: categoriesMapped,
-      }),
-      { status: 200, headers: corsHeaders() }
+      JSON.stringify({ products: productsMapped, categories: categoriesMapped }),
+      { status: 200, headers: { "Access-Control-Allow-Origin": "*" } }
     );
   } catch (err) {
     console.error(err);
     return new Response(
       JSON.stringify({ products: [], categories: [] }),
-      { status: 500, headers: corsHeaders() }
+      { status: 500, headers: { "Access-Control-Allow-Origin": "*" } }
     );
   }
 }
@@ -77,8 +74,8 @@ export async function POST(req) {
     const name = formData.get("name");
     const price = formData.get("price");
     const categoryId = formData.get("categoryId");
-    const description = formData.get("description"); // ✅ new field
-    const images = formData.getAll("images"); // multiple files
+    const description = formData.get("description") || ""; // 👈 added
+    const images = formData.getAll("images");
 
     if (!name || !price || !categoryId) {
       return new Response(
@@ -112,7 +109,7 @@ export async function POST(req) {
       name,
       price,
       categoryId: String(categoryId),
-      description: description || "", // ✅ add description (default empty)
+      description, // 👈 now saved in DB
       images: imageUrls,
       createdAt: new Date(),
       highlight: false,
@@ -122,20 +119,14 @@ export async function POST(req) {
 
     return new Response(
       JSON.stringify({
-        product: {
-          ...newProduct,
-          id: insertResult.insertedId.toString(),
-        },
+        product: { ...newProduct, id: insertResult.insertedId.toString() },
       }),
       { status: 200, headers: corsHeaders() }
     );
   } catch (err) {
     console.error("POST error:", err);
     return new Response(
-      JSON.stringify({
-        error: "Failed to add product",
-        details: err.message,
-      }),
+      JSON.stringify({ error: "Failed to add product", details: err.message }),
       { status: 500, headers: corsHeaders() }
     );
   }
