@@ -24,7 +24,6 @@ export async function OPTIONS() {
 /**
  * GET → Fetch all products + categories from shopDB
  */
-
 export async function GET() {
   try {
     const client = await clientPromise;
@@ -32,32 +31,36 @@ export async function GET() {
 
     // Fetch products and categories
     const products = await db.collection("products").find({}).toArray();
-    const categories = await db.collection("categories ").find({}).toArray();
+    const categories = await db.collection("categories").find({}).toArray();
 
     // Map products
-    const productsMapped = products.map(p => ({
+    const productsMapped = products.map((p) => ({
       ...p,
-       _id: p._id.toString(),
+      _id: p._id.toString(),
       id: p._id.toString(),
-      categoryId: p.categoryId?.toString() || null, // safeguard
+      categoryId: p.categoryId?.toString() || null,
+      description: p.description || "", // ✅ include description
     }));
 
     // Map categories
-    const categoriesMapped = categories.map(c => ({
+    const categoriesMapped = categories.map((c) => ({
       _id: c._id.toString(),
-      id: c.id ? String(c.id) : c._id.toString(), // fallback to _id
+      id: c.id ? String(c.id) : c._id.toString(),
       name: c.name,
     }));
 
     return new Response(
-      JSON.stringify({ products: productsMapped, categories: categoriesMapped }),
-      { status: 200, headers: { "Access-Control-Allow-Origin": "*" } }
+      JSON.stringify({
+        products: productsMapped,
+        categories: categoriesMapped,
+      }),
+      { status: 200, headers: corsHeaders() }
     );
   } catch (err) {
     console.error(err);
     return new Response(
       JSON.stringify({ products: [], categories: [] }),
-      { status: 500, headers: { "Access-Control-Allow-Origin": "*" } }
+      { status: 500, headers: corsHeaders() }
     );
   }
 }
@@ -74,7 +77,8 @@ export async function POST(req) {
     const name = formData.get("name");
     const price = formData.get("price");
     const categoryId = formData.get("categoryId");
-    const images = formData.getAll("images"); // 👈 multiple files
+    const description = formData.get("description"); // ✅ new field
+    const images = formData.getAll("images"); // multiple files
 
     if (!name || !price || !categoryId) {
       return new Response(
@@ -91,13 +95,12 @@ export async function POST(req) {
           const buffer = Buffer.from(await image.arrayBuffer());
 
           const uploadResult = await new Promise((resolve, reject) => {
-            cloudinary.v2.uploader.upload_stream(
-              { folder: "products" },
-              (err, result) => {
+            cloudinary.v2.uploader
+              .upload_stream({ folder: "products" }, (err, result) => {
                 if (err) reject(err);
                 else resolve(result);
-              }
-            ).end(buffer);
+              })
+              .end(buffer);
           });
 
           imageUrls.push(uploadResult.secure_url);
@@ -109,7 +112,8 @@ export async function POST(req) {
       name,
       price,
       categoryId: String(categoryId),
-      images: imageUrls, // ✅ now an array
+      description: description || "", // ✅ add description (default empty)
+      images: imageUrls,
       createdAt: new Date(),
       highlight: false,
     };
@@ -118,16 +122,21 @@ export async function POST(req) {
 
     return new Response(
       JSON.stringify({
-        product: { ...newProduct, id: insertResult.insertedId.toString() },
+        product: {
+          ...newProduct,
+          id: insertResult.insertedId.toString(),
+        },
       }),
       { status: 200, headers: corsHeaders() }
     );
   } catch (err) {
     console.error("POST error:", err);
     return new Response(
-      JSON.stringify({ error: "Failed to add product", details: err.message }),
+      JSON.stringify({
+        error: "Failed to add product",
+        details: err.message,
+      }),
       { status: 500, headers: corsHeaders() }
     );
   }
 }
-

@@ -40,12 +40,14 @@ export async function PUT(req, { params }) {
     const name = formData.get("name");
     const price = formData.get("price");
     const categoryId = formData.get("categoryId");
+    const description = formData.get("description"); // ✅ new field
     const image = formData.get("image");
 
     const updatedData = { 
       name, 
       price, 
-      categoryId: String(categoryId) 
+      categoryId: String(categoryId),
+      description: description || "" // ✅ add description (default empty)
     };
 
     if (image && typeof image === "object") {
@@ -61,7 +63,7 @@ export async function PUT(req, { params }) {
       updatedData.images = [uploadResult.secure_url];
     }
 
-    // First update
+    // Update product
     const updateResult = await db.collection("products").updateOne(
       { _id: new ObjectId(id) },
       { $set: updatedData }
@@ -74,8 +76,10 @@ export async function PUT(req, { params }) {
       });
     }
 
-    // Then fetch the updated product
-    const updatedProduct = await db.collection("products").findOne({ _id: new ObjectId(id) });
+    // Fetch updated product
+    const updatedProduct = await db
+      .collection("products")
+      .findOne({ _id: new ObjectId(id) });
 
     return new Response(JSON.stringify({ product: updatedProduct }), {
       status: 200,
@@ -91,29 +95,36 @@ export async function PUT(req, { params }) {
   }
 }
 
-
-
 // DELETE product
 export async function DELETE(req, { params }) {
   try {
-    const id = params.id; // this must be MongoDB _id
+    const id = params.id;
     const client = await clientPromise;
     const db = client.db("shopDB");
 
     const result = await db.collection("products").deleteOne({ _id: new ObjectId(id) });
 
-    if (result.deletedCount === 0)
-      return new Response(JSON.stringify({ error: "Product not found" }), { status: 404, headers: corsHeaders() });
+    if (result.deletedCount === 0) {
+      return new Response(JSON.stringify({ error: "Product not found" }), {
+        status: 404,
+        headers: corsHeaders(),
+      });
+    }
 
-    return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders() });
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: corsHeaders(),
+    });
   } catch (err) {
     console.error(err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: corsHeaders(),
+    });
   }
 }
 
-
-
+// GET product by ID
 export async function GET(req, { params }) {
   try {
     const id = params.id;
@@ -124,16 +135,26 @@ export async function GET(req, { params }) {
       .collection("products")
       .findOne({ _id: new ObjectId(id) });
 
-    if (!product)
+    if (!product) {
       return new Response(JSON.stringify({ error: "Product not found" }), {
         status: 404,
         headers: corsHeaders(),
       });
+    }
 
-    return new Response(JSON.stringify({ product }), {
-      status: 200,
-      headers: corsHeaders(),
-    });
+    return new Response(
+      JSON.stringify({
+        product: {
+          ...product,
+          id: product._id.toString(),
+          description: product.description || "", // ✅ make sure description included
+        },
+      }),
+      {
+        status: 200,
+        headers: corsHeaders(),
+      }
+    );
   } catch (err) {
     console.error(err);
     return new Response(JSON.stringify({ error: err.message }), {
