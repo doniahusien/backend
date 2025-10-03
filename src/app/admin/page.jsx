@@ -133,7 +133,11 @@ export default function AdminProductsPage() {
   };
 
 
-  { user?.role != 'admin' && !isAuthenticated && router.push('/login') }
+useEffect(() => {
+  if (!isAuthenticated || user?.role !== 'admin') {
+    router.push('/login');
+  }
+}, [isAuthenticated, user, router]);
   return (
     <div className="p-8 max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Admin: Products</h1>
